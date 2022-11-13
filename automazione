@@ -1,0 +1,35 @@
+description: Gestione volume dispositivi
+trigger:
+  - platform: state
+    entity_id:
+      - media_player.echo
+      - media_player.alexa
+      - media_player.echo_dot
+      - media_player.echo_flex
+      - media_player.nest
+    attribute: volume_level
+condition: []
+action:
+  - service: notify.alexa_media_echo
+    data:
+      message: >-
+        {{ trigger.entity_id[13:] }} {{
+        trigger.from_state.attributes.volume_level }} {{
+        trigger.to_state.attributes.volume_level }}
+      data:
+        type: tts
+    enabled: false
+  - service: input_text.set_value
+    data:
+      value: >
+        {% set dispositivo = trigger.entity_id[13:] %} {% set volume =
+        trigger.to_state.attributes.volume_level %} {% set volume_attuale =
+        (states('input_text.alexa_volume') | from_json) %} {% set current =
+        volume_attuale.items() | list %} {# make update a list of tuples #} {%
+        set update = { dispositivo: volume }.items() | list %} {# remove keys
+        from current that are in update #} {% set current = current |
+        rejectattr('0', 'eq', update | map(attribute='0') | list) | list %} {%
+        set volume = dict.from_keys(current + update) %} {{ volume | to_json }}
+    target:
+      entity_id: input_text.alexa_volume
+mode: single
