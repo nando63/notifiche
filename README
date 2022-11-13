@@ -1,0 +1,4 @@
+service: script.notifica_su_un_assistante_vocale
+data:
+  message: prova
+  dispositivo: nest
