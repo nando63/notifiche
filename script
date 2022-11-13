@@ -1,0 +1,41 @@
+alias: Notifica su un assistante vocale
+variables:
+  volume_attuale: "{{states('input_text.alexa_volume') | from_json }}"
+  volume_notifica: "{{{ 'echo':0.5, 'echo_dot':0.6,'echo_flex':0.9,'alexa':0.6, 'nest':0.5}}}"
+sequence:
+  - condition: template
+    value_template: "{{ dispositivo is defined and dispositivo != '' }}"
+  - condition: template
+    value_template: "{{ message is defined and message != '' }}"
+  - service: media_player.volume_set
+    data:
+      volume_level: "{{ volume_notifica[dispositivo] }}"
+    target:
+      entity_id: media_player.{{ dispositivo }}
+  - if:
+      - condition: template
+        value_template: "{{ dispositivo == 'nest' }}"
+    then:
+      - service: tts.google_translate_say
+        data:
+          entity_id: media_player.{{dispositivo}}
+          message: "{{ message }}"
+          language: it
+    else:
+      - service: notify.alexa_media
+        data:
+          message: "{{ message }}"
+          target: media_player.{{ dispositivo }}
+          data:
+            type: announce
+  - delay:
+      seconds: >-
+        {{(5 + (message.count(', ') + message.count('. ') + message.count('! ')
+        + message.count('? ') + message.count(': ') + message.count('; ')) |
+        float * 0.35 + (message | length) * 0.06) | round(default=0)}}
+  - service: media_player.volume_set
+    data:
+      volume_level: "{{ volume_attuale[dispositivo] }}"
+    target:
+      entity_id: media_player.{{ dispositivo }}
+mode: single
